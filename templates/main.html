@@ -2,13 +2,13 @@
 <html>
 <style>
 form {
-    margin: auto;
+    margin: 50px;
     width: 35%;
 }
 
 .result {
-    margin: auto;
-    width: 35%;
+    margin: 50px;
+    width: 80%;
     border: 1px solid #ccc;
 }
 </style>
@@ -16,23 +16,18 @@ form {
 <head>
     <title>Tags prediction for Stack OverFlow Questions</title>
 </head>
-<form action="{{ url_for('main') }}" method="POST" align="left">
+<form action="{{ url_for('main') }}" method="POST" align="left" >
         Question:
         <br>
-        <textarea name="question" rows="20" cols="100" required>
-        </textarea>
+        <br>
+        <textarea name="question" rows="20" cols="100" required></textarea>
         <br>
         <input type="submit">
 </form>
-<br>
 <div class="result" align="center">
     {% if result %}
-    	{% for variable, value in original_input.items() %}
-    		<b>{{ variable }}</b> : {{ value }}
-    	{% endfor %}
-		<br>
-    	<br> Predicted tags for the question:
-   		<p style="font-size:10px">{{ result }}</p>
+    <p align="left" style="font-size:20px"> Tags suggérées pour la question : </p>
+ 		<p align="left" style="font-size:17px">{{ result }}</p>
     {% endif %}
 </div>
 

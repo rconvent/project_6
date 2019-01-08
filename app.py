@@ -1,34 +1,34 @@
 import flask
 import pickle
 import pandas as pd
+import numpy as np
 
 
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-
+# Keras
+from keras.utils import CustomObjectScope
+from keras.initializers import glorot_uniform
+from keras.models import load_model
 
 
 # Model keras mise en place du réseau + load des poids entrainés
 
-model = Sequential()
-model.add(Dense(2000, activation='relu', input_dim=2000))
-model.add(Dropout(0.1))
-model.add(Dense(600, activation='relu'))
-model.add(Dropout(0.1))
-model.add(Dense(31, activation='sigmoid'))
+with CustomObjectScope({'GlorotUniform': glorot_uniform()}):
+    model = load_model('./model/tensorflow.h5')
+model._make_predict_function()
 
-model.compile(optimizer='rmsprop',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-
-model = model.load_weights('./model/my_model.h5')
 
 # Import des pickles des models entrainés (vecCount, tfidf)
 
 vecCount = pickle.load(open('./model/countVec.pkl', "rb"))
 tfidf = pickle.load(open('./model/tfidf.pkl', "rb"))
 
+# tags du model
+tags_columns = ['.net', 'asp.net', 'asp.net-mvc', 'c', 'c#', 'c++', 'css',
+                'database','html', 'iphone', 'java', 'javascript', 'jquery',
+                'linux', 'mysql','objective-c', 'performance', 'php', 'python',
+                'regex', 'ruby','ruby-on-rails', 'sql', 'sql-server', 'vb.net',
+                 'visual-studio','visual-studio-2008', 'windows', 'winforms',
+                 'wpf', 'xml']
 
 # Initialise the Flask app
 app = flask.Flask(__name__, template_folder='templates')
@@ -38,23 +38,36 @@ app = flask.Flask(__name__, template_folder='templates')
 def main():
     if flask.request.method == 'GET':
         # Just render the initial form, to get input
+
         return(flask.render_template('main.html'))
 
     if flask.request.method == 'POST':
         # Extract the input
         question = flask.request.form['question']
 
+        # Transformation en Pandas Series pour intégrer au model
         df_question = pd.Series([question])
 
-        # Get the tag prediction
+        # Transformation en bag of word ensuite tfidf
         tags = vecCount.transform(df_question)
         tags = tfidf.transform(tags)
 
-        # Render the form again, but add in the prediction and remind user
-        # of the values they input before
+        # Prediction des tags
+        tags = pd.DataFrame(model.predict(tags))
+        tags.columns = tags_columns
+
+        # Tags dans une variable string
+        tags_result = ''
+
+        for item in (tags>=0.5).any()[(tags>=0.5).any()].index :
+            tags_result = tags_result + '  '  + item
+
+        #print(tags[tags>=0.5].columns.astype(str))
+
+        # Affichage des tags
         return flask.render_template('main.html',
                                      original_input={'question':question},
-                                     result="coucou",
+                                     result=tags_result,
                                      )
 
 if __name__ == '__main__':
