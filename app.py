@@ -2,7 +2,12 @@ import flask
 import pickle
 import pandas as pd
 import numpy as np
+import re
 
+# Nltk
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem.snowball import EnglishStemmer
 
 # Keras
 from keras.utils import CustomObjectScope
@@ -44,6 +49,25 @@ def main():
     if flask.request.method == 'POST':
         # Extract the input
         question = flask.request.form['question']
+
+        # 1. On enlève les tags HTML
+        #question = BeautifulSoup(question, 'lxml').get_text()
+
+        # 2. On enlève les caractères qui ne sont pas des lettres
+        question = re.sub("[^a-zA-Z]", " ", question)
+
+        # 3. Conversion en minuscule et split en mots individuels
+        question = question.lower().split()
+
+        # 4. Creation du set de stopwords (nltk)
+        stops = set(stopwords.words('english'))
+
+        # 5. On enlève ces stop words et on lemmentise
+        stemmer = EnglishStemmer()
+        question = [stemmer.stem(w) for w in question if not w in stops]
+
+        # 6. On remet tout en un seul string
+        question = " ".join(question)
 
         # Transformation en Pandas Series pour intégrer au model
         df_question = pd.Series([question])
